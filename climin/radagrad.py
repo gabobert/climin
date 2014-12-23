@@ -101,7 +101,7 @@ class Radagrad(Minimizer):
             t = self.n_iter + 1
             gradient = self.fprime(self.wrt, *args, **kwargs)
 
-#             self.g_avg = ((t - 1) / t) * self.g_avg + (1 / t) * gradient
+            self.g_avg = ((t - 1) / t) * self.g_avg + (1 / t) * gradient
             P_gt = self.srft.transform_1d(gradient)
 #             P_gt = gradient
             self.P_g_avg = ((t - 1) / t) * self.P_g_avg + (1 / t) * P_gt
