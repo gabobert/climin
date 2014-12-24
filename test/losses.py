@@ -69,6 +69,26 @@ class LogisticRegression(object):
     def solved(self, tolerance=0.1):
         return self.score() - tolerance < 0
 
+class RegularizedLogisticRegression(LogisticRegression):
+    
+    def __init__(self, n_inpt=5, n_classes=3, n_samples=10, lamb=1, seed=12345):
+        super(RegularizedLogisticRegression, self).__init__(n_inpt, n_classes, n_samples, seed)
+        self.lamb = lamb
+
+    def l2reg(self, wrt):
+        return self.lamb * np.dot(wrt, wrt)
+
+    def l2regprime(self,wrt):
+        return 2 * self.lamb * wrt
+
+    def f_reg(self, wrt, inpt, target):
+        return self.f(wrt, inpt, target) + self.l2reg(wrt)
+    
+    def fprime_reg(self, wrt, inpt, target):
+        return self.fprime(wrt, inpt, target) + self.l2regprime(wrt)
+    
+    def score(self):
+        return self.f(self.pars, self.X, self.Z) + self.l2reg(self.pars)
 
 class Quadratic(object):
 
