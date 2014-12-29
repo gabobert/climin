@@ -88,7 +88,8 @@ class Radagrad(Minimizer):
         self.k = k
         self.delta = delta
         self.I_delta = np.diag(np.ones(self.Gt.shape[0]) * delta)
-        self.P_Lamb_inv_P = np.diag(np.ones(k) * wrt.shape[0] / (k * 2 * lamb))
+#         self.P_Lamb_inv_P = np.diag(np.ones(k) * wrt.shape[0] / (k * 2 * lamb))
+        self.P_Lamb_inv_P = np.diag(np.ones(k) / (2 * lamb))
         self.lamb_inv = 1 / (2 * lamb)
 
         self.srft = SubsampledRandomizedFourrierTransform(k)
@@ -102,16 +103,16 @@ class Radagrad(Minimizer):
             gradient = self.fprime(self.wrt, *args, **kwargs)
 
             self.g_avg = ((t - 1) / t) * self.g_avg + (1 / t) * gradient
-            P_gt = self.srft.transform_1d(gradient)
-#             P_gt = gradient
+#             P_gt = self.srft.transform_1d(gradient)
+            P_gt = gradient
             self.P_g_avg = ((t - 1) / t) * self.P_g_avg + (1 / t) * P_gt
             self.Gt += np.outer(P_gt, P_gt)
             St = self._my_sqrtm(self.Gt)
             Ht_inv = np.linalg.inv(self.I_delta + St)
             Ht_reg_inv = scipy_pinv(Ht_inv + 1 / (t * self.eta) * self.P_Lamb_inv_P)
 
-            uppro = self.srft.inverse_transform_1d(np.dot(Ht_reg_inv, self.P_g_avg))
-#             uppro = np.dot(Ht_reg_inv, self.P_g_avg)
+#             uppro = self.srft.inverse_transform_1d(np.dot(Ht_reg_inv, self.P_g_avg))
+            uppro = np.dot(Ht_reg_inv, self.P_g_avg)
             self.wrt = -self.lamb_inv * (self.g_avg - 1 / (t * self.eta) * self.lamb_inv * uppro)
 
 
