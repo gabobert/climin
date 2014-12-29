@@ -12,9 +12,9 @@ from common import continuation
 def test_radagrad_lr():
     obj = LogisticRegression()
     args = itertools.repeat(((obj.X, obj.Z), {}))
-    lamb = 0.00001
-    eta = 0.5
-    delta = 0.0001
+    lamb = 0.001
+    eta = 0.1
+    delta = 0.01
     k = 18
     opt = Radagrad(obj.pars, obj.fprime, eta, lamb, delta, k, args=args)
     for i, info in enumerate(opt):

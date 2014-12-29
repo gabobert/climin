@@ -26,3 +26,6 @@ def test_adadelta_continue():
     opt = Adadelta(obj.pars, obj.fprime, 0.9, args=args)
 
     continuation(opt)
+
+if __name__ == '__main__':
+    test_adadelta_lr()
