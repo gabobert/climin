@@ -8,6 +8,8 @@ from climin import Adadelta
 from losses import Quadratic, LogisticRegression, Rosenbrock
 from common import continuation
 
+def squared_l2_reg(wrt, lamb):
+    return lamb * np.dot(wrt, wrt)
 
 def test_adadelta_lr():
     obj = LogisticRegression()
