@@ -4,42 +4,72 @@ import nose
 import numpy as np
 import matplotlib.pyplot as plt
 
-from climin import Radagrad
+from climin import Radagrad, Adagrad
 
 from losses import Quadratic, LogisticRegression, Rosenbrock, RegularizedLogisticRegression
 from common import continuation
 from climin import Adadelta
+import random
 
 def squared_l2_reg(wrt, lamb):
     return lamb * np.dot(wrt, wrt)
 
 def test_radagrad_lr():
-    lamb = 0.01
-    obj = RegularizedLogisticRegression(n_samples=500, lamb=lamb)
-    args = itertools.repeat(((obj.X, obj.Z), {}))
+    seed = 14
+    random.seed(seed)
+    n_samples = 100
+    n_dim = 10
+    obj_rada = LogisticRegression(n_samples=n_samples, n_inpt=n_dim, seed=seed)
+    obj_ada = LogisticRegression(n_samples=n_samples, n_inpt=n_dim, seed=seed)
+    obj_dada = LogisticRegression(n_samples=n_samples, n_inpt=n_dim, seed=seed)
+#     ridx = random.sample(xrange(obj_rada.X.shape[0]), obj_rada.X.shape[0])
+    ridx = xrange(obj_rada.X.shape[0])
+#     print ridx
     eta = 0.5
-    delta = 0.01
-    k = obj.pars.shape[0]
-    opt_rada = Radagrad(obj.pars, obj.fprime, eta, lamb, delta, k, args=args)
-    opt_ada = Adadelta(obj.pars, obj.fprime_reg, 0.9, args=args)
+    eta_rada = 0.5
+    delta = 0.001
+    k = obj_rada.pars.shape[0]
+    print obj_rada.pars.shape[0], k
+    opt_rada = Radagrad(obj_rada.pars, obj_rada.fprime, eta_rada, 0.001, delta, k, args=itertools.repeat(((obj_rada.X[ridx], obj_rada.Z[ridx]), {})))
+    opt_ada = Adadelta(obj_ada.pars, obj_ada.fprime, 0.9, args=itertools.repeat(((obj_ada.X[ridx], obj_ada.Z[ridx]), {})))
+    opt_dada = Adagrad(obj_dada.pars, obj_dada.fprime, eta, delta, args=itertools.repeat(((obj_dada.X[ridx], obj_dada.Z[ridx]), {})))
 
-    rada_loss, ada_loss = [], []
+    rada_loss, ada_loss, dada_loss = [], [], []
 
-    for i, info in enumerate(opt_rada):
-        rada_loss += [obj.f_reg(opt_rada.wrt, obj.X, obj.Z)]
+
+#     print opt_ada.wrt
+#     print obj_ada.pars
+    for i, info in enumerate(opt_ada):
+#         print info
+        ada_loss += [obj_ada.f(opt_ada.wrt, obj_ada.X, obj_ada.Z)]
         
-        if i > 500:
+        if i > n_samples * 10:
             break
 
-    for i, info in enumerate(opt_ada):
-        ada_loss += [obj.f_reg(opt_ada.wrt, obj.X, obj.Z)]
-        
-        if i > 500:
+#     print opt_dada.wrt
+#     print obj_dada.pars
+    for i, info in enumerate(opt_dada):
+#         print info
+        dada_loss += [obj_dada.f(opt_dada.wrt, obj_dada.X, obj_dada.Z)]
+
+        if i > n_samples * 10:
+            break
+
+
+#     print opt_rada.wrt
+#     print obj_rada.pars
+    for i, info in enumerate(opt_rada):
+#         print info['args'][0][i]
+
+        rada_loss += [obj_rada.f(opt_rada.wrt, obj_rada.X, obj_rada.Z)]
+
+        if i > n_samples * 10:
             break
 
 
     plt.plot(rada_loss, '-r')
     plt.plot(ada_loss, '-b')
+    plt.plot(dada_loss, '-g')
 
     plt.show()
 

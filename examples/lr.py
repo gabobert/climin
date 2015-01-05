@@ -37,7 +37,7 @@ def loss(parameters, inpt, targets):
 
 def main():
     # Hyper parameters.
-    optimizer = 'lbfgs'        # or use: ncg, lbfgs, rmsprop
+    optimizer = 'rada'  # or use: ncg, lbfgs, rmsprop
     batch_size = 10000
 
     flat, (w, b) = climin.util.empty_with_views(tmpl)
@@ -70,7 +70,7 @@ def main():
         batches_per_pass = X.shape[0] / batch_size
 
     if optimizer == 'gd':
-        opt = climin.GradientDescent(flat, d_loss_wrt_pars, steprate=0.1,
+        opt = climin.GradientDescent(flat, d_loss_wrt_pars, step_rate=0.1,
                                      momentum=.95, args=args)
     elif optimizer == 'lbfgs':
         opt = climin.Lbfgs(flat, loss, d_loss_wrt_pars, args=args)
@@ -82,6 +82,16 @@ def main():
                              args=args)
     elif optimizer == 'rprop':
         opt = climin.Rprop(flat, d_loss_wrt_pars, args=args)
+
+    elif optimizer == 'rada':
+#         k = int(np.sqrt(flat.shape[0]) + 1)
+        k = 1000
+        print flat.shape[0], k
+        opt = climin.Radagrad(flat, d_loss_wrt_pars, 0.8, 1, 0.00001, k, args=args)
+
+    elif optimizer == 'dada':
+        opt = climin.Adagrad(flat, d_loss_wrt_pars, 0.5, 0.000001, args=args)
+
     else:
         print 'unknown optimizer'
         return 1

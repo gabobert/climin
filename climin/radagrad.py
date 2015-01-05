@@ -9,6 +9,7 @@ from mathadapt import sqrt, ones_like, clip, zero_like
 from scipy.linalg import pinv as scipy_pinv, polar
 import numpy as np
 from fjlt.SubsampledRandomizedFourrierTransform import SubsampledRandomizedFourrierTransform
+from scipy.linalg import sqrtm
 
 class Radagrad(Minimizer):
     """RadaGrad optimizer.
@@ -88,31 +89,56 @@ class Radagrad(Minimizer):
         self.k = k
         self.delta = delta
         self.I_delta = np.diag(np.ones(self.Gt.shape[0]) * delta)
-#         self.P_Lamb_inv_P = np.diag(np.ones(k) * wrt.shape[0] / (k * 2 * lamb))
-        self.P_Lamb_inv_P = np.diag(np.ones(k) / (2 * lamb))
+        self.P_Lamb_inv_P = np.diag(np.ones(k) * wrt.shape[0] / (k * 2 * lamb))
+#         self.P_Lamb_inv_P = np.diag(np.ones(k) / (2 * lamb))
         self.lamb_inv = 1 / (2 * lamb)
 
         self.srft = SubsampledRandomizedFourrierTransform(k)
         self.srft.fit(wrt)
 
-
     def _iterate(self):
+        for args, kwargs in self.args:
+
+            gradient = self.fprime(self.wrt, *args, **kwargs)
+
+            P_gt = self.srft.transform_1d(gradient)
+#             P_gt = gradient
+            self.Gt += np.outer(P_gt, P_gt)
+#             St = self._my_sqrtm(np.diag(np.diag(self.Gt)))
+            St = self._my_sqrtm(self.Gt)
+            Ht_inv = np.linalg.inv(self.I_delta + St)
+
+            uppro = self.srft.inverse_transform_1d(np.dot(Ht_inv, P_gt))
+#             uppro = np.dot(Ht_inv, P_gt)
+            self.wrt -= self.eta * uppro
+
+
+            self.n_iter += 1
+
+            yield {
+                'n_iter': self.n_iter,
+                'gradient': gradient,
+                'args': args,
+                'kwargs': kwargs,
+            }
+
+    def _iterate_rda(self):
         for args, kwargs in self.args:
 
             t = self.n_iter + 1
             gradient = self.fprime(self.wrt, *args, **kwargs)
 
             self.g_avg = ((t - 1) / t) * self.g_avg + (1 / t) * gradient
-#             P_gt = self.srft.transform_1d(gradient)
-            P_gt = gradient
+            P_gt = self.srft.transform_1d(gradient)
+#             P_gt = gradient
             self.P_g_avg = ((t - 1) / t) * self.P_g_avg + (1 / t) * P_gt
             self.Gt += np.outer(P_gt, P_gt)
             St = self._my_sqrtm(self.Gt)
             Ht_inv = np.linalg.inv(self.I_delta + St)
             Ht_reg_inv = scipy_pinv(Ht_inv + 1 / (t * self.eta) * self.P_Lamb_inv_P)
 
-#             uppro = self.srft.inverse_transform_1d(np.dot(Ht_reg_inv, self.P_g_avg))
-            uppro = np.dot(Ht_reg_inv, self.P_g_avg)
+            uppro = self.srft.inverse_transform_1d(np.dot(Ht_reg_inv, self.P_g_avg))
+#             uppro = np.dot(Ht_reg_inv, self.P_g_avg)
             self.wrt = -self.lamb_inv * (self.g_avg - 1 / (t * self.eta) * self.lamb_inv * uppro)
 
 
@@ -125,8 +151,12 @@ class Radagrad(Minimizer):
                 'kwargs': kwargs,
             }
 
+    
     def _my_sqrtm(self, X):
-        tol = 1e-7
+        return sqrtm(X)
+
+    def _my_sqrtm_polar(self, X):
+        tol = 1e-10
 
         L = np.linalg.cholesky(X + np.diag(np.ones(X.shape[0]) * tol))
         U, P = polar(L, side="right")
