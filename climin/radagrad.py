@@ -55,7 +55,7 @@ class Radagrad(Minimizer):
 
     state_fields = 'n_iter g_avg P_g_avg Gt eta lamb delta'.split()
 
-    def __init__(self, wrt, fprime, eta, lamb, delta, k, args=None):
+    def __init__(self, wrt, fprime, eta, lamb, delta, k, n_classes=None, args=None):
         """Create a RadaGrad object.
 
         Parameters
@@ -80,35 +80,55 @@ class Radagrad(Minimizer):
         """
         super(Radagrad, self).__init__(wrt, args=args)
 
+        self.n_classes = n_classes
+        if self.n_classes is not None:
+            self.k_perc = k
+            self.k_full = k * n_classes + n_classes
+        else:
+            self.k_perc = k
+            self.k_full = k
+            
         self.fprime = fprime
         self.g_avg = zero_like(wrt)
-        self.P_g_avg = np.zeros(k)
-        self.Gt = np.zeros((k, k))
+        self.P_g_avg = np.zeros(self.k_full)
+        self.Gt = np.zeros((self.k_full, self.k_full))
         self.eta = eta
         self.lamb = lamb
-        self.k = k
         self.delta = delta
         self.I_delta = np.diag(np.ones(self.Gt.shape[0]) * delta)
         self.P_Lamb_inv_P = np.diag(np.ones(k) * wrt.shape[0] / (k * 2 * lamb))
 #         self.P_Lamb_inv_P = np.diag(np.ones(k) / (2 * lamb))
         self.lamb_inv = 1 / (2 * lamb)
 
-        self.srft = SubsampledRandomizedFourrierTransform(k)
-        self.srft.fit(wrt)
+
+            
+        self.srft = SubsampledRandomizedFourrierTransform(self.k_perc)
+        if self.n_classes is None:
+            self.srft.fit(wrt)
+        else:
+            self.n_param = wrt.shape[0]
+            self.n_features = (self.n_param-self.n_classes)/self.n_classes
+            self.srft.fit(wrt[:self.n_features])
 
     def _iterate(self):
         for args, kwargs in self.args:
 
             gradient = self.fprime(self.wrt, *args, **kwargs)
-
-            P_gt = self.srft.transform_1d(gradient)
+            
+            if self.n_classes is None: 
+                P_gt = self.srft.transform_1d(gradient)
+            else:
+                P_gt = np.r_[np.array([self.srft.transform_1d(gradient[self.n_features * i:self.n_features * (i + 1)]) for i in range(self.n_classes)]).flatten(), gradient[self.n_param - self.n_classes:]]
 #             P_gt = gradient
             self.Gt += np.outer(P_gt, P_gt)
 #             St = self._my_sqrtm(np.diag(np.diag(self.Gt)))
             St = self._my_sqrtm(self.Gt)
             Ht_inv = np.linalg.inv(self.I_delta + St)
-
-            uppro = self.srft.inverse_transform_1d(np.dot(Ht_inv, P_gt))
+            if self.n_classes is None:
+                uppro = self.srft.inverse_transform_1d(np.dot(Ht_inv, P_gt))
+            else:
+                vec = np.dot(Ht_inv, P_gt)
+                uppro = np.r_[np.array([self.srft.inverse_transform_1d(vec[self.k_perc * i:self.k_perc * (i + 1)]) for i in range(self.n_classes)]).flatten(), vec[self.k_full - self.n_classes:]]
 #             uppro = np.dot(Ht_inv, P_gt)
             self.wrt -= self.eta * uppro
 

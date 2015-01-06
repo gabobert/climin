@@ -1,5 +1,7 @@
 """Train logistic regression on the mnist data set."""
 
+from __future__ import division
+
 import cPickle
 import gzip
 import itertools
@@ -10,6 +12,8 @@ import numpy as np
 import climin
 import climin.util
 import climin.initialize
+
+from test.losses import LogisticRegression
 
 tmpl = [(784, 10), 10]          # w is matrix and b a vector
 
@@ -35,7 +39,11 @@ def loss(parameters, inpt, targets):
     return loss.sum(axis=1).mean()
 
 
+
+
 def main():
+    lr = LogisticRegression(n_samples=1, n_inpt=784, n_classes=10)
+
     # Hyper parameters.
     optimizer = 'rada'  # or use: ncg, lbfgs, rmsprop
     batch_size = 10000
@@ -49,6 +57,8 @@ def main():
         train_set, val_set, test_set = cPickle.load(f)
 
     X, Z = train_set
+    print X.shape
+    print lr.pars.shape
     VX, VZ = val_set
     TX, TZ = test_set
 
@@ -85,21 +95,24 @@ def main():
 
     elif optimizer == 'rada':
 #         k = int(np.sqrt(flat.shape[0]) + 1)
-        k = 1000
+        k = 3
         print flat.shape[0], k
-        opt = climin.Radagrad(flat, d_loss_wrt_pars, 0.8, 1, 0.00001, k, args=args)
+        opt = climin.Radagrad(lr.pars, lr.fprime, 0.5, 1, 0.0001, k, n_classes=10, args=args)
 
     elif optimizer == 'dada':
-        opt = climin.Adagrad(flat, d_loss_wrt_pars, 0.5, 0.000001, args=args)
+        opt = climin.Adagrad(lr.pars, lr.fprime, 0.5, 0.0001, args=args)
 
     else:
         print 'unknown optimizer'
         return 1
 
     for info in opt:
+        print '%i/%i test loss: %g' % (
+                info['n_iter'], batches_per_pass * 10, lr.f(lr.pars, VX, VZ))
         if info['n_iter'] % batches_per_pass == 0:
             print '%i/%i test loss: %g' % (
-                info['n_iter'], batches_per_pass * 10, loss(flat, VX, VZ))
+                info['n_iter'], batches_per_pass * 10, lr.f(lr.pars, VX, VZ))
+
         if info['n_iter'] >= 10 * batches_per_pass:
             break
 
