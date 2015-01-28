@@ -24,7 +24,7 @@ class LogisticRegression(object):
     def spd_matrix(self):
         A = np.random.standard_normal((self.n_inpt, self.n_inpt))
         A = A + A.T
-        return A + np.eye(self.n_inpt)
+        return A + np.eye(self.n_inpt) * self.n_inpt
 
     def make_data(self):
         xs = []

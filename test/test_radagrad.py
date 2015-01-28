@@ -15,11 +15,11 @@ def squared_l2_reg(wrt, lamb):
     return lamb * np.dot(wrt, wrt)
 
 def test_radagrad_lr():
-    seed = 67
+    seed = 125
     random.seed(seed)
     n_samples = 100
-    n_dim = 80
-    n_classes = 2
+    n_dim = 40
+    n_classes = 3
     obj_rada = LogisticRegression(n_samples=n_samples, n_inpt=n_dim, n_classes=n_classes, seed=seed)
     print obj_rada.X.shape
     obj_ada = LogisticRegression(n_samples=n_samples, n_inpt=n_dim, n_classes=n_classes, seed=seed)
