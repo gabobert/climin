@@ -9,3 +9,4 @@ from asgd import Asgd
 from adadelta import Adadelta
 from radagrad import Radagrad
 from adagrad import Adagrad
+from adagrad_full import AdagradFull

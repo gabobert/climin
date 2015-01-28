@@ -95,23 +95,26 @@ def main():
 
     elif optimizer == 'rada':
 #         k = int(np.sqrt(flat.shape[0]) + 1)
-        k = 3
+        k = 78
         print flat.shape[0], k
         opt = climin.Radagrad(lr.pars, lr.fprime, 0.5, 1, 0.0001, k, n_classes=10, args=args)
 
     elif optimizer == 'dada':
         opt = climin.Adagrad(lr.pars, lr.fprime, 0.5, 0.0001, args=args)
 
+    elif optimizer == 'delta':
+        opt = climin.Adadelta(lr.pars, lr.fprime, args=args)
+
     else:
         print 'unknown optimizer'
         return 1
 
     for info in opt:
-        print '%i/%i test loss: %g' % (
-                info['n_iter'], batches_per_pass * 10, lr.f(lr.pars, VX, VZ))
-        if info['n_iter'] % batches_per_pass == 0:
-            print '%i/%i test loss: %g' % (
-                info['n_iter'], batches_per_pass * 10, lr.f(lr.pars, VX, VZ))
+        print '%i/%i train loss: %g' % (
+                info['n_iter'], batches_per_pass * 10, lr.f(lr.pars, X, Z))
+#         if info['n_iter'] % batches_per_pass == 0:
+#             print '%i/%i test loss: %g' % (
+#                 info['n_iter'], batches_per_pass * 10, lr.f(lr.pars, VX, VZ))
 
         if info['n_iter'] >= 10 * batches_per_pass:
             break

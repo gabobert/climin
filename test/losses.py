@@ -21,11 +21,17 @@ class LogisticRegression(object):
         self.pars = np.random.standard_normal(n_inpt * n_classes + n_classes)
         self.X, self.Z = self.make_data()
 
+    def spd_matrix(self):
+        A = np.random.standard_normal((self.n_inpt, self.n_inpt))
+        A = A + A.T
+        return A + np.eye(self.n_inpt)
+
     def make_data(self):
         xs = []
         zs = []
         for i in range(self.n_classes):
             x = np.random.standard_normal((self.n_samples, self.n_inpt))
+#             x = np.random.multivariate_normal(np.zeros(self.n_inpt), self.spd_matrix(), self.n_samples)
             # Make somehow sure that they are far away from each other.
             x += 5 * i
             z = np.zeros((self.n_samples, self.n_classes))
@@ -34,7 +40,7 @@ class LogisticRegression(object):
             zs.append(z)
         X = np.vstack(xs)
         Z = np.vstack(zs)
-        return X, Z
+        return X , Z
 
     def predict(self, wrt, inpt):
         n_weights = self.n_inpt * self.n_classes

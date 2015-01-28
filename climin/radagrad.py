@@ -173,7 +173,7 @@ class Radagrad(Minimizer):
 
     
     def _my_sqrtm(self, X):
-        return sqrtm(X)
+        return np.real(sqrtm(X))
 
     def _my_sqrtm_polar(self, X):
         tol = 1e-10
