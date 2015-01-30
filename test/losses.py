@@ -30,8 +30,8 @@ class LogisticRegression(object):
         xs = []
         zs = []
         for i in range(self.n_classes):
-            x = np.random.standard_normal((self.n_samples, self.n_inpt))
-#             x = np.random.multivariate_normal(np.zeros(self.n_inpt), self.spd_matrix(), self.n_samples)
+#             x = np.random.standard_normal((self.n_samples, self.n_inpt))
+            x = np.random.multivariate_normal(np.zeros(self.n_inpt), self.spd_matrix(), self.n_samples)
             # Make somehow sure that they are far away from each other.
             x += 5 * i
             z = np.zeros((self.n_samples, self.n_classes))

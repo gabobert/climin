@@ -81,13 +81,13 @@ class AdagradFull(Minimizer):
             
         self.fprime = fprime
         self.g_avg = zero_like(wrt)
-        self.Gt = np.zeros((self.g_avg.shape[0], self.g_avg.shape[0]))
+        self.Gt = np.zeros((self.g_avg.shape[0], self.g_avg.shape[0]))  # TODO: make eye
         self.eta = eta
         self.lamb = lamb
         self.delta = delta
         self.I_delta = np.diag(np.ones(self.Gt.shape[0]) * delta)
 
-            
+        self.eye_Gt = np.eye(*self.Gt.shape)
 
         if self.n_classes is not None:
             self.n_param = wrt.shape[0]
@@ -99,8 +99,8 @@ class AdagradFull(Minimizer):
             gradient = self.fprime(self.wrt, *args, **kwargs)
             
             self.Gt += np.outer(gradient, gradient)
-            St = self._my_sqrtm(self.Gt)
-            Ht_inv = np.linalg.inv(self.I_delta + St)
+            St = self._my_sqrtm(self.I_delta + self.Gt)
+            Ht_inv = np.linalg.inv(St)
             if self.n_classes is None:
                 uppro = np.dot(Ht_inv, gradient)
             else:
@@ -120,5 +120,6 @@ class AdagradFull(Minimizer):
 
     
     def _my_sqrtm(self, X):
-        return np.real(sqrtm(X))
+#         tol = 1e-7
+        return np.real(sqrtm(X))  # + self.eye_Gt * tol)
 

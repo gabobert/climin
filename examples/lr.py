@@ -45,8 +45,9 @@ def main():
     lr = LogisticRegression(n_samples=1, n_inpt=784, n_classes=10)
 
     # Hyper parameters.
-    optimizer = 'rada'  # or use: ncg, lbfgs, rmsprop
-    batch_size = 10000
+    optimizer = 'dada'  # or use: ncg, lbfgs, rmsprop
+#     batch_size = 10000
+    batch_size = None
 
     flat, (w, b) = climin.util.empty_with_views(tmpl)
     climin.initialize.randomize_normal(flat, 0, 0.1)
@@ -95,7 +96,7 @@ def main():
 
     elif optimizer == 'rada':
 #         k = int(np.sqrt(flat.shape[0]) + 1)
-        k = 78
+        k = 212
         print flat.shape[0], k
         opt = climin.Radagrad(lr.pars, lr.fprime, 0.5, 1, 0.0001, k, n_classes=10, args=args)
 
@@ -104,6 +105,9 @@ def main():
 
     elif optimizer == 'delta':
         opt = climin.Adadelta(lr.pars, lr.fprime, args=args)
+
+    elif optimizer == 'ada':
+        opt = climin.AdagradFull(lr.pars, lr.fprime, 0.5, 1, 0.0001, args=args)
 
     else:
         print 'unknown optimizer'
