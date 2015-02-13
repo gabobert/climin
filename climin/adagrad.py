@@ -48,9 +48,9 @@ class Adagrad(Minimizer):
 
     """
 
-    state_fields = 'n_iter Gt eta'.split()
+    state_fields = 'n_iter Gt eta delta'.split()
 
-    def __init__(self, wrt, fprime, eta, delta, args=None):
+    def __init__(self, wrt, fprime, eta, delta, f=None, args=None):
         """Create a AdaGrad object.
 
         Parameters
@@ -74,7 +74,7 @@ class Adagrad(Minimizer):
         self.Gt = np.zeros(wrt.shape[0])
         self.eta = eta
         self.delta = delta
-
+        self.f = f
 
 
     def _iterate(self):
@@ -83,7 +83,12 @@ class Adagrad(Minimizer):
             gradient = self.fprime(self.wrt, *args, **kwargs)
             self.Gt += gradient ** 2
 
+#             print self.wrt
+#             print self.Gt
+            print self.f(self.wrt, *args, **kwargs)
+
             self.wrt -= self.eta / np.sqrt(self.Gt + self.delta) * gradient
+#             self.wrt -= self.eta * gradient
 
 
             self.n_iter += 1

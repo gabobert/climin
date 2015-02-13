@@ -93,7 +93,7 @@ class GradientDescent(Minimizer):
         self._momentum_type = value
 
     def __init__(self, wrt, fprime, step_rate=0.1, momentum=0.0,
-                 momentum_type='standard',
+                 momentum_type='standard', f=None,
                  args=None):
         """Create a GradientDescent object.
 
@@ -134,6 +134,7 @@ class GradientDescent(Minimizer):
         super(GradientDescent, self).__init__(wrt, args=args)
 
         self.fprime = fprime
+        self.f = f
 
         self.step_rate = step_rate
         self.momentum = momentum
@@ -148,6 +149,8 @@ class GradientDescent(Minimizer):
             step_rate = self.step_rate
             momentum = self.momentum
             step_m1 = self.step
+
+            print self.f(self.wrt, *args, **kwargs)
 
             if self.momentum_type == 'standard':
                 gradient = self.fprime(self.wrt, *args, **kwargs)
