@@ -3,3 +3,5 @@
 *.suo
 docs/build/*
 build/
+*.orig
+dist/

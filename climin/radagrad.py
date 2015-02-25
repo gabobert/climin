@@ -55,7 +55,7 @@ class Radagrad(Minimizer):
 
     state_fields = 'n_iter g_avg P_g_avg Gt eta lamb delta'.split()
 
-    def __init__(self, wrt, fprime, eta, lamb, delta, k, n_classes=None, args=None):
+    def __init__(self, wrt, fprime, eta, lamb, delta, k, n_classes=None, f=None, args=None):
         """Create a RadaGrad object.
 
         Parameters
@@ -81,6 +81,7 @@ class Radagrad(Minimizer):
         super(Radagrad, self).__init__(wrt, args=args)
 
         self.n_classes = n_classes
+        self.f = f
         if self.n_classes is not None:
             self.k_perc = k
             self.k_full = k * n_classes + n_classes
@@ -120,6 +121,8 @@ class Radagrad(Minimizer):
 
             gradient = self.fprime(self.wrt, *args, **kwargs)
             
+            print self.f(self.wrt, *args, **kwargs)
+
             if self.n_classes is None: 
                 P_gt = self.srft.transform_1d(gradient)
             else:
