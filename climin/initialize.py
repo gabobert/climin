@@ -3,14 +3,17 @@
 """Module that contains functionality to initialize parameters to starting
 values."""
 
+from __future__ import absolute_import
+
 import random
 
 import numpy as np
 
-import climin.mathadapt as ma
+from . import mathadapt as ma
+from .compat import range
 
 
-def sparsify_columns(arr, n_non_zero, keep_diagonal=False):
+def sparsify_columns(arr, n_non_zero, keep_diagonal=False, random_state=None):
     """Set all but ``n_non_zero`` entries to zero for each column of ``arr``.
 
     This is a common technique to find better starting points for learning
@@ -27,6 +30,10 @@ def sparsify_columns(arr, n_non_zero, keep_diagonal=False):
 
     keep_diagonal : boolean, optional [default: False]
       If set to True and ``arr`` is square, do keep the diagonal.
+
+    random_state : numpy.random.RandomState object, optional [default : None]
+      If set, random number generator that will generate the indices
+      corresponding to the zero-valued columns.
 
     Examples
     --------
@@ -45,16 +52,17 @@ def sparsify_columns(arr, n_non_zero, keep_diagonal=False):
     # In case it's gnumpy, copy to numpy array first. The sparsifying loop will
     # run in numpy.
     arr_np = arr if isinstance(arr, np.ndarray) else arr.as_numpy_array()
-
     mask = np.ones_like(arr_np)
     for i in range(arr.shape[1]):
-        idxs = xrange(colsize)
-        zeros = random.sample(idxs, colsize - n_non_zero)
+        idxs = range(colsize)
+        if random_state is None:
+            zeros = random.sample(idxs, colsize - n_non_zero)
+        else:
+            zeros = random_state.choice(idxs, colsize - n_non_zero,
+                                        replace=False)
         mask[zeros, i] *= 0
-
     if keep_diagonal and arr.shape[0] == arr.shape[1]:
         mask += np.eye(arr.shape[0])
-
     arr *= mask
 
 
@@ -85,13 +93,13 @@ def bound_spectral_radius(arr, bound=1.2):
            [  2.69693846e-01,   3.59591794e-01,   4.49489743e-01],
            [  5.39387691e-01,   6.29285640e-01,   7.19183588e-01]])
     """
-    vals, vecs = np.linalg.eig(ma.assert_numpy(arr))
+    vals, vecs = np.linalg.eigh(ma.assert_numpy(arr))
     vals /= abs(vals).max()
     vals *= bound
-    arr[...] = np.dot(vecs, np.dot(np.diag(vals), np.linalg.inv(vecs)))
+    arr[...] = np.dot(vecs, np.dot(np.diag(vals), vecs.T))
 
 
-def randomize_normal(arr, loc=0, scale=1):
+def randomize_normal(arr, loc=0, scale=1, random_state=None):
     """Populate an array with random numbers from a normal distribution with
     mean `loc` and standard deviation `scale`.
 
@@ -106,6 +114,9 @@ def randomize_normal(arr, loc=0, scale=1):
 
     scale : float
       Standard deviation of the random numbers.
+
+    random_state : np.random.RandomState object, optional [default : None]
+      Random number generator that shall generate the random numbers.
 
     Examples
     --------
@@ -124,7 +135,8 @@ def randomize_normal(arr, loc=0, scale=1):
           [  9.99867829,   9.99410111,   9.8242318 ],
           [  9.9383779 ,   9.94880091,  10.03179085]])
     """
-    sample = np.random.normal(loc, scale, arr.shape)
+    rng = np.random if random_state is None else random_state
+    sample = rng.normal(loc, scale, arr.shape)
     if isinstance(arr, np.ndarray):
         arr[...] = sample.astype(arr.dtype)
     else:

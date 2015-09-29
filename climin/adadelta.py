@@ -2,9 +2,10 @@
 
 """This module provides an implementation of adadelta."""
 
+from __future__ import absolute_import
 
-from base import Minimizer
-from mathadapt import sqrt, ones_like, clip
+from .base import Minimizer
+from .mathadapt import sqrt, ones_like, clip
 
 
 class Adadelta(Minimizer):
@@ -28,7 +29,7 @@ class Adadelta(Minimizer):
 
     .. math::
        \\Delta \\theta_t &=& \\alpha {\sqrt{s_{t-1} + \\epsilon} \over \sqrt{g_t + \\epsilon}}~f'(\\theta_t), \\\\
-       \\theta_{t+1} &=& \\theta_t + \\Delta \\theta_t.
+       \\theta_{t+1} &=& \\theta_t - \\Delta \\theta_t.
 
     Subsequently we adapt the moving average of the steps:
 
@@ -40,7 +41,7 @@ class Adadelta(Minimizer):
     formulas:
 
     .. math::
-        \\theta_{t + {1 \over 2}} &=& \\theta_t + \\beta \\Delta \\theta_{t-1}, \\\\
+        \\theta_{t + {1 \over 2}} &=& \\theta_t - \\beta \\Delta \\theta_{t-1}, \\\\
        g_t &=& (1 - \\gamma)~f'(\\theta_{t + {1 \over 2}})^2 + \\gamma g_{t-1}, \\\\
        \\Delta \\theta_t &=& \\alpha {\sqrt{s_{t-1} + \\epsilon} \over \sqrt{g_t + \\epsilon}}~f'(\\theta_{t + {1 \over 2}}).
 
@@ -107,7 +108,7 @@ class Adadelta(Minimizer):
             d = self.decay
             o = self.offset
             m = self.momentum
-            step1 = step_m1 * m * self.step_rate
+            step1 = step_m1 * m
             self.wrt -= step1
 
             gradient = self.fprime(self.wrt, *args, **kwargs)

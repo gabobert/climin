@@ -2,11 +2,10 @@
 
 """This module contains the Resilient propagation optimizer."""
 
+from __future__ import absolute_import
 
-
-import mathadapt as ma
-
-from base import Minimizer
+from . import mathadapt as ma
+from .base import Minimizer
 
 
 class Rprop(Minimizer):
@@ -127,21 +126,16 @@ class Rprop(Minimizer):
         for args, kwargs in self.args:
             gradient_m1 = self.gradient
             self.gradient = self.fprime(self.wrt, *args, **kwargs)
-            changes_min = self.changes * self.step_grow
-            changes_max = self.changes * self.step_shrink
             gradprod = gradient_m1 * self.gradient
-            changes_min *= gradprod > 0
-            changes_max *= gradprod < 0
-            self.changes *= gradprod == 0
 
-            # TODO actually, this should be done to changes
-            changes_min = ma.clip(changes_min, self.min_step, self.max_step)
-            changes_max = ma.clip(changes_max, self.min_step, self.max_step)
+            self.changes[gradprod > 0] *= self.step_grow
+            self.changes[gradprod < 0] *= self.step_shrink
+            self.changes = ma.clip(self.changes, self.min_step, self.max_step)
 
-            self.changes += changes_min + changes_max
             step = -self.changes * ma.sign(self.gradient)
             self.wrt += step
 
+            self.n_iter += 1
             yield {
                 'args': args,
                 'kwargs': kwargs,

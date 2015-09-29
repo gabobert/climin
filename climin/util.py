@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 
+from __future__ import absolute_import
 
 import inspect
 import itertools
@@ -8,12 +9,13 @@ import warnings
 
 import numpy as np
 
-from gd import GradientDescent
-from bfgs import Lbfgs
-from cg import NonlinearConjugateGradient
-from rprop import Rprop
-from rmsprop import RmsProp
-from adadelta import Adadelta
+from .gd import GradientDescent
+from .bfgs import Lbfgs
+from .cg import NonlinearConjugateGradient
+from .rprop import Rprop
+from .rmsprop import RmsProp
+from .adadelta import Adadelta
+from .adam import Adam
 from radagrad import Radagrad
 from adagrad import Adagrad
 from adagrad_full import AdagradFull
@@ -61,7 +63,7 @@ def coroutine(f):
     """Turn a generator function into a coroutine by calling .next() once."""
     def started(*args, **kwargs):
         cr = f(*args, **kwargs)
-        cr.next()
+        next(cr)
         return cr
     return started
 
@@ -136,6 +138,7 @@ def optimizer(identifier, wrt, *args, **kwargs):
         'rprop': Rprop,
         'rmsprop': RmsProp,
         'adadelta': Adadelta,
+        'adam': Adam,
         'radagrad': Radagrad,
         'adagrad-full': AdagradFull,
         'adagrad': Adagrad,
@@ -311,7 +314,7 @@ def minibatches(arr, batch_size, d=0):
     return res
 
 
-def iter_minibatches(lst, batch_size, dims, n_cycles=False):
+def iter_minibatches(lst, batch_size, dims, n_cycles=False, random_state=None):
     """Return an iterator that successively yields tuples containing aligned
     minibatches of size `batch_size` from slicable objects given in `lst`, in
     random order without replacement.
@@ -339,6 +342,9 @@ def iter_minibatches(lst, batch_size, dims, n_cycles=False):
         Number of cycles after which to stop the iterator. If ``False``, will
         yield forever.
 
+    random_state : a numpy.random.RandomState object, optional [default : None]
+        Random number generator that will act as a seed for the minibatch order
+
 
     Returns
     -------
@@ -352,13 +358,15 @@ def iter_minibatches(lst, batch_size, dims, n_cycles=False):
         if any(len(i) != len(batches[0]) for i in batches[1:]):
             raise ValueError("containers to be batched have different lengths")
     counter = itertools.count()
+    if random_state is not None:
+        random.seed(random_state.normal())
     while True:
         indices = [i for i, _ in enumerate(batches[0])]
         while True:
             random.shuffle(indices)
             for i in indices:
                 yield tuple(b[i] for b in batches)
-            count = counter.next()
+            count = next(counter)
             if n_cycles and count >= n_cycles:
                 raise StopIteration()
 
@@ -388,7 +396,7 @@ class OptimizerDistribution(object):
         self.options = options
 
     def rvs(self):
-        opt = random.choice(self.options.keys())
+        opt = random.choice(list(self.options.keys()))
         grid = self.options[opt]
         sample = list(ParameterSampler(grid, n_iter=1))[0]
         return opt, sample
